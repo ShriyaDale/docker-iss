@@ -1,22 +1,28 @@
 name: Container Build CICD
 
 on:
-  workflow_dispatch:
   push:
-    branches: [ main ]
+    workflow_dispatch:
+    branches:
+    - 'main'
+    # tags:
+    #   - '*.*'
 
+# Be sure to update the lines below to match YOUR GitHub account name / your container image name.
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ShriyaDale/docker-iss
-  IMAGE_TAG: 1.${{ github.run_number }}
+  IMAGE_NAME: shriyadale/docker-iss
+  IMAGE_TAG: 1.${{ github.run_number }} # GITHUB_RUN_NUMBER }}
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      # - name: Set ENV - use this for tags
+      #   run: echo "IMAGE_TAG=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -32,7 +38,6 @@ jobs:
           password: ${{ secrets.GHCR_PAT }}
 
       - name: Build and push
-        id: docker_build
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -40,8 +45,9 @@ jobs:
           provenance: false
           push: ${{ github.event_name != 'pull_request' }}
           tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+            ghcr.io/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+            ghcr.io/${{ env.IMAGE_NAME }}:latest
+          labels: ${{ steps.meta.outputs.labels }}
 
       - name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}
